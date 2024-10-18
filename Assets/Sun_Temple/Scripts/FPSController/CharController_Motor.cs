@@ -4,73 +4,85 @@ using UnityEngine;
 
 public class CharController_Motor : MonoBehaviour {
 
-	public float speed = 10.0f;
-	public float sensitivity = 30.0f;
-	public float WaterHeight = 15.5f;
-	CharacterController character;
-	public GameObject cam;
-	float moveFB, moveLR;
-	float rotX, rotY;
-	public bool webGLRightClickRotation = true;
-	float gravity = -9.8f;
+    public float speed = 10.0f;
+    public float sensitivity = 30.0f;
+    public float WaterHeight = 15.5f;
+    public float jumpHeight = 0.2f;    // Reduced jump height further
+    public float gravityValue = -10.0f; // Increased gravity value
+    private float gravity;
 
+    CharacterController character;
+    public GameObject cam;
+    float moveFB, moveLR;
+    float rotX, rotY;
+    public bool webGLRightClickRotation = true;
+    private Vector3 playerVelocity;
+    private bool isGrounded;
 
-	void Start(){
-		//LockCursor ();
-		character = GetComponent<CharacterController> ();
-		if (Application.isEditor) {
-			webGLRightClickRotation = false;
-			sensitivity = sensitivity * 1.5f;
-		}
-	}
+    void Start() {
+        character = GetComponent<CharacterController>();
+        if (Application.isEditor) {
+            webGLRightClickRotation = false;
+            sensitivity = sensitivity * 1.5f;
+        }
+    }
 
+    void CheckForWaterHeight() {
+        if (transform.position.y < WaterHeight) {
+            gravity = 0f;
+        } else {
+            gravity = gravityValue;
+        }
+    }
 
-	void CheckForWaterHeight(){
-		if (transform.position.y < WaterHeight) {
-			gravity = 0f;			
-		} else {
-			gravity = -9.8f;
-		}
-	}
+    void Update() {
+        // Check if the character is on the ground
+        isGrounded = character.isGrounded;	
 
+        // Reset vertical velocity if grounded
+        if (isGrounded && playerVelocity.y < 0) {
+            playerVelocity.y = -2f;  // Small negative value to keep the player grounded
+        }
 
+        // Movement input
+        moveFB = Input.GetAxis("Vertical") * speed;
+        moveLR = Input.GetAxis("Horizontal") * speed;
 
-	void Update(){
-		moveFB = Input.GetAxis ("Horizontal") * speed;
-		moveLR = Input.GetAxis ("Vertical") * speed;
+        // Camera rotation input
+        rotX = Input.GetAxis("Mouse X") * sensitivity;
+        rotY = Input.GetAxis("Mouse Y") * sensitivity;
 
-		rotX = Input.GetAxis ("Mouse X") * sensitivity;
-		rotY = Input.GetAxis ("Mouse Y") * sensitivity;
+        CheckForWaterHeight();
 
-		//rotX = Input.GetKey (KeyCode.Joystick1Button4);
-		//rotY = Input.GetKey (KeyCode.Joystick1Button5);
+        Vector3 movement = new Vector3(moveLR, 0, moveFB);
+        movement = transform.rotation * movement;
 
-		CheckForWaterHeight ();
+        // Move the character
+        character.Move(movement * Time.deltaTime);
 
+        // Camera rotation
+        if (webGLRightClickRotation) {
+            if (Input.GetKey(KeyCode.Mouse0)) {
+                CameraRotation(cam, rotX, rotY);
+            }
+        } else {
+            CameraRotation(cam, rotX, rotY);
+        }
 
-		Vector3 movement = new Vector3 (moveFB, gravity, moveLR);
+        // Jump logic
+        if (isGrounded && Input.GetKeyDown(KeyCode.Space)) {
+            playerVelocity.y = jumpHeight; // Directly set the jump height
+        }
 
+        // Apply gravity
+        playerVelocity.y += gravity * Time.deltaTime;
 
+        // Move the character based on vertical velocity (gravity/jumping)
+        character.Move(playerVelocity * Time.deltaTime);
+    }
 
-		if (webGLRightClickRotation) {
-			if (Input.GetKey (KeyCode.Mouse0)) {
-				CameraRotation (cam, rotX, rotY);
-			}
-		} else if (!webGLRightClickRotation) {
-			CameraRotation (cam, rotX, rotY);
-		}
-
-		movement = transform.rotation * movement;
-		character.Move (movement * Time.deltaTime);
-	}
-
-
-	void CameraRotation(GameObject cam, float rotX, float rotY){		
-		transform.Rotate (0, rotX * Time.deltaTime, 0);
-		cam.transform.Rotate (-rotY * Time.deltaTime, 0, 0);
-	}
-
-
-
-
+    void CameraRotation(GameObject cam, float rotX, float rotY) {
+        transform.Rotate(0, rotX * Time.deltaTime, 0);
+        cam.transform.Rotate(-rotY * Time.deltaTime, 0, 0);
+    }
 }
