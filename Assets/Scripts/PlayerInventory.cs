@@ -1,18 +1,18 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class PlayerInventory : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
+    public int NumberOfCoins {get; private set;}
+
+    public UnityEvent<PlayerInventory> OnCoinsCollected;
+
+    public void CoinsCollected(){
+        NumberOfCoins++;
+        OnCoinsCollected.Invoke(this);
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+
 }
